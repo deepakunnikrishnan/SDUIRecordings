@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SDUI — Engineering v2</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { width: 100%; height: 100%; background: #0F172A; color: #F8FAFC;
+                 font-family: system-ui, -apple-system, sans-serif; overflow: hidden; }
+    .deck { width: 100%; height: 100%; position: relative; }
+    .slide { position: absolute; inset: 0; display: flex; flex-direction: column;
+             justify-content: center; align-items: flex-start; padding: 72px 96px;
+             opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+    .slide.active { opacity: 1; pointer-events: auto; }
+    .tag { font-size: 12px; font-weight: 700; letter-spacing: 0.12em;
+           text-transform: uppercase; color: #34D399; margin-bottom: 20px; }
+    h1 { font-size: clamp(32px, 4.5vw, 56px); font-weight: 800; line-height: 1.1;
+         max-width: 860px; margin-bottom: 28px; }
+    h2 { font-size: clamp(24px, 3vw, 40px); font-weight: 700; line-height: 1.2;
+         max-width: 800px; margin-bottom: 24px; }
+    p  { font-size: 18px; line-height: 1.7; color: #94A3B8; max-width: 740px; margin-bottom: 14px; }
+    ul { list-style: none; padding: 0; }
+    li { font-size: 17px; line-height: 1.7; color: #CBD5E1; padding: 8px 0;
+         border-bottom: 1px solid #1E293B; max-width: 760px; }
+    li::before { content: "$ "; color: #34D399; font-family: monospace; }
+    code { background: #1E293B; border: 1px solid #334155; border-radius: 4px;
+           padding: 1px 6px; font-size: 0.88em; color: #7DD3FC; font-family: monospace; }
+    pre  { background: #1E293B; border: 1px solid #334155; border-radius: 8px;
+           padding: 18px 22px; font-size: 12.5px; line-height: 1.65; color: #94A3B8;
+           font-family: monospace; max-width: 860px; margin-top: 12px; overflow: auto; }
+    .two-col { display: flex; gap: 32px; align-items: flex-start; }
+    .two-col pre { flex: 1; margin-top: 0; }
+    .accent  { color: #34D399; }
+    .accent2 { color: #7DD3FC; }
+    .accent3 { color: #A78BFA; }
+    .label-green  { color: #34D399; font-weight: 700; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; }
+    .label-blue   { color: #7DD3FC; font-weight: 700; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; }
+    .label-purple { color: #A78BFA; font-weight: 700; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; }
+    .counter { position: fixed; bottom: 32px; right: 48px; font-size: 12px; color: #475569; }
+    .hint    { position: fixed; bottom: 32px; left: 48px;  font-size: 12px; color: #334155; }
+  </style>
+</head>
+<body>
+<div class="deck">
+
+  <!-- 1 -->
+  <div class="slide active">
+    <div class="tag">Problem</div>
+    <h1>UI is <span class="accent">compiled</span> into binaries. That's the bug.</h1>
+    <p>Every layout decision, conditional, and feature flag is baked at build time. Changing anything means a full release pipeline. We move those decisions server-side — one typed JSON manifest per bank, resolved at request time.</p>
+  </div>
+
+  <!-- 2 -->
+  <div class="slide">
+    <div class="tag">Three Integration Modes</div>
+    <h2>One SDK. Three call sites. <span class="accent">Zero business logic in the client.</span></h2>
+<pre><span class="label-blue">// Mode 1 — full-screen Activity (bank picker tab)</span>
+startActivity(CardManagementActivity.createIntent(ctx, bankId, colors))
+
+<span class="label-green">// Mode 2 — screen embedded in host nav (Cards tab)</span>
+CardManagementScreen(
+    overrideBffClient = BffClient(url, mapOf("X-Bank-Id" to bankId)),
+    overrideColors    = bank.colors,
+    viewModelKey      = bankId,
+)
+
+<span class="label-purple">// Mode 3 — single slot widget (Home tab)</span>
+key(bankId) {
+    CardManagementWidget(
+        slotId             = bank.widgetSlotId,   // "hero" | "accountBanner" | "portfolioHeader"
+        overrideBffClient  = BffClient(url, mapOf("X-Bank-Id" to bankId)),
+        overrideColors     = bank.colors,
+        widgetViewModelKey = bankId,
+    )
+}</pre>
+  </div>
+
+  <!-- 3 -->
+  <div class="slide">
+    <div class="tag">Architecture</div>
+    <h2>Five layers. <span class="accent">Clients know nothing.</span></h2>
+<pre>Host App (Compose) ─── 3-tab demo: Launch / Cards / Home
+  └── Card Management SDK
+        ├── Mode 1: CardManagementActivity  (Intent extras: bankId + 8 color Ints)
+        ├── Mode 2: CardManagementScreen    (override params: bffClient, colors, vmKey)
+        └── Mode 3: CardManagementWidget   (override params: bffClient, colors, vmKey)
+              └── android-sdui engine
+                    └── BffClient(url, headers)  ──► BFF  X-Bank-Id: meridianbank
+                                                        └── Compositor
+                                                              ├── manifest-resolver
+                                                              │     └── data/meridianbank/card-dashboard-manifest.json
+                                                              ├── data-coordinator(bankId)
+                                                              │     └── card-service, txn-service (bank-keyed data)
+                                                              └── slot-assembler (transforms, paramsHash)</pre>
+  </div>
+
+  <!-- 4 -->
+  <div class="slide">
+    <div class="tag">Bank Routing</div>
+    <h2><span class="accent2">X-Bank-Id</span> routes the full stack. One header, three different screens.</h2>
+    <ul>
+      <li>BFF reads <code>X-Bank-Id</code> header → threads <code>bankId?</code> into <code>assemble(screenId, slotId, bankId)</code></li>
+      <li><code>resolveManifest</code> tries <code>data/{bankId}/card-dashboard-manifest.json</code> first, silently falls back to default</li>
+      <li>Mock services receive <code>bankId?</code> → bank-keyed card data (card_123 / card_456 / card_789) and transactions</li>
+      <li>NovaPay: no header sent → default manifest (hero + controls + list)</li>
+      <li>Apex: <code>X-Bank-Id: apexbank</code> → account-banner + activity-feed, no card controls slot</li>
+      <li>Meridian: <code>X-Bank-Id: meridianbank</code> → portfolio-header + card-identity + controls + activity-feed</li>
+    </ul>
+  </div>
+
+  <!-- 5 -->
+  <div class="slide">
+    <div class="tag">ViewModel Isolation</div>
+    <h2><code style="font-size:0.75em">key(bankId)</code> alone is not enough. <span class="accent">Here's why.</span></h2>
+    <p style="margin-bottom:20px"><code>key(bankId)</code> changes Compose composition identity — it tears down and rebuilds the subtree. But the ViewModel is stored in the Activity's <code>ViewModelStore</code> under a class-name key, outside the composition tree. On the next bank switch the old VM (with the stale BffClient) is returned from cache.</p>
+    <div class="two-col">
+<pre><span style="color:#EF4444">// ❌ broken — VM reused across banks</span>
+key(bankId) {
+    SduiWidget(
+        bffClient = bankClient
+        // no viewModelKey
+    )
+}</pre>
+<pre><span style="color:#34D399">// ✅ correct — VM keyed per bank</span>
+key(bankId) {
+    SduiWidget(
+        bffClient    = bankClient,
+        viewModelKey = bankId,   // ← new param
+    )
+}</pre>
+    </div>
+  </div>
+
+  <!-- 6 -->
+  <div class="slide">
+    <div class="tag">Content Management Loop</div>
+    <h2>Edit JSON → pull to refresh → <span class="accent">layout updates live</span>. No app rebuild.</h2>
+    <ul>
+      <li>Server manifest is a JSON file — add a slot, rename a label, reorder sections</li>
+      <li>No recompile, no deploy pipeline, no store review needed</li>
+      <li>Pull-to-refresh in Activity, Screen, and Widget mode all hit the same BFF endpoint</li>
+      <li>Each mode gets independent pull-to-refresh; Widget refresh is slot-scoped (not the whole screen)</li>
+      <li>Phase 2: swap file with Postgres-backed Manifest Service — same loop, persistent and versioned</li>
+    </ul>
+  </div>
+
+  <!-- 7 -->
+  <div class="slide">
+    <div class="tag">Phase 2 Roadmap</div>
+    <h2>The prototype proves the loop. <span class="accent">Phase 2 makes it production-ready.</span></h2>
+    <ul>
+      <li>Manifest Service: Postgres JSONB, admin API, optimistic concurrency, versioned rollback</li>
+      <li>Compositor as a service: Redis pub-sub cache invalidation, horizontal scale</li>
+      <li>App entity: one config root per bank — routes, auth contract, theme, embed policy, action scope</li>
+      <li>Universal action schema: idempotency keys, all action types (nav, alert, state, deeplink, sequence)</li>
+      <li>iOS renderer: SwiftUI, same manifest format — <code>CompositeDefinition</code> is platform-agnostic</li>
+      <li>Portal: drag-and-drop manifest editor — PM edits layout without touching JSON</li>
+    </ul>
+  </div>
+
+</div>
+<div class="counter" id="counter">1 / 7</div>
+<div class="hint">← → to navigate</div>
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const counter = document.getElementById('counter');
+  let cur = 0;
+  function show(n) {
+    slides[cur].classList.remove('active');
+    cur = (n + slides.length) % slides.length;
+    slides[cur].classList.add('active');
+    counter.textContent = (cur + 1) + ' / ' + slides.length;
+  }
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') show(cur + 1);
+    if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   show(cur - 1);
+  });
+</script>
+</body>
+</html>

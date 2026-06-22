@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SDUI — Product v2</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { width: 100%; height: 100%; background: #0F172A; color: #F8FAFC;
+                 font-family: system-ui, -apple-system, sans-serif; overflow: hidden; }
+    .deck { width: 100%; height: 100%; position: relative; }
+    .slide { position: absolute; inset: 0; display: flex; flex-direction: column;
+             justify-content: center; align-items: flex-start; padding: 80px 100px;
+             opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+    .slide.active { opacity: 1; pointer-events: auto; }
+    .tag { font-size: 13px; font-weight: 700; letter-spacing: 0.1em;
+           text-transform: uppercase; color: #38BDF8; margin-bottom: 20px; }
+    h1 { font-size: clamp(36px, 5vw, 64px); font-weight: 800; line-height: 1.1;
+         max-width: 820px; margin-bottom: 32px; }
+    h2 { font-size: clamp(28px, 3.5vw, 48px); font-weight: 700; line-height: 1.2;
+         max-width: 780px; margin-bottom: 28px; }
+    p  { font-size: 20px; line-height: 1.65; color: #94A3B8; max-width: 700px; margin-bottom: 16px; }
+    ul { list-style: none; padding: 0; }
+    li { font-size: 20px; line-height: 1.7; color: #CBD5E1; padding: 10px 0;
+         border-bottom: 1px solid #1E293B; max-width: 720px; }
+    li::before { content: "→ "; color: #38BDF8; font-weight: 700; }
+    .accent  { color: #38BDF8; }
+    .accent2 { color: #A78BFA; }
+    .accent3 { color: #34D399; }
+    .modes { display: flex; gap: 28px; margin-top: 8px; }
+    .mode-card { background: #1E293B; border: 1px solid #334155; border-radius: 14px;
+                 padding: 24px 28px; flex: 1; max-width: 260px; }
+    .mode-card .label { font-size: 11px; font-weight: 700; letter-spacing: 0.12em;
+                        text-transform: uppercase; margin-bottom: 10px; }
+    .mode-card .title { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+    .mode-card .desc  { font-size: 14px; color: #64748B; line-height: 1.55; }
+    .mode-card.m1 .label { color: #38BDF8; }
+    .mode-card.m2 .label { color: #A78BFA; }
+    .mode-card.m3 .label { color: #34D399; }
+    .counter { position: fixed; bottom: 32px; right: 48px; font-size: 13px; color: #475569; }
+    .hint    { position: fixed; bottom: 32px; left: 48px;  font-size: 13px; color: #334155; }
+  </style>
+</head>
+<body>
+<div class="deck">
+
+  <!-- 1 -->
+  <div class="slide active">
+    <div class="tag">The Problem</div>
+    <h1>Shipping UI changes takes <span class="accent">weeks</span>. It shouldn't.</h1>
+    <p>Every card layout change, every new toggle, every re-ordered section requires a full mobile release. QA, store review, phased rollout — just to move a button.</p>
+    <p>And every bank client ships the same layout, because customisation costs another release cycle.</p>
+  </div>
+
+  <!-- 2 -->
+  <div class="slide">
+    <div class="tag">The Principle</div>
+    <h2>Move decisions from the <span class="accent">build</span> to the <span class="accent">server</span>.</h2>
+    <p>The server describes what to show, whether to show it, and with what data. The client knows only how to render it. UI changes become configuration changes — deployed in seconds, not weeks.</p>
+    <p>One binary. Every bank sees a different layout, different data, different brand.</p>
+  </div>
+
+  <!-- 3 -->
+  <div class="slide">
+    <div class="tag">Three Ways to Embed</div>
+    <h2>The SDK fits wherever the bank needs it.</h2>
+    <div class="modes">
+      <div class="mode-card m1">
+        <div class="label">Mode 1</div>
+        <div class="title">Full Screen</div>
+        <div class="desc">Launch CardManagement as a standalone screen. Bank picks its own entry point, colors, and layout.</div>
+      </div>
+      <div class="mode-card m2">
+        <div class="label">Mode 2</div>
+        <div class="title">Tab / Screen</div>
+        <div class="desc">Embed CardManagement as a tab inside the host app. Host controls the nav; SDK controls the content.</div>
+      </div>
+      <div class="mode-card m3">
+        <div class="label">Mode 3</div>
+        <div class="title">Widget</div>
+        <div class="desc">Drop a single card slot anywhere in the host UI — a balance card on the home screen, no extra screens needed.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4 -->
+  <div class="slide">
+    <div class="tag">Three Banks. One APK.</div>
+    <h2>Every bank gets its own layout, brand, and data — <span class="accent">from the server</span>.</h2>
+    <ul>
+      <li><span style="color:#818CF8">NovaPay</span> — indigo gradient card, lock toggle, transaction list, 3 sections</li>
+      <li><span style="color:#34D399">Apex Bank</span> — green theme, account banner, activity feed, no lock control</li>
+      <li><span style="color:#A78BFA">Meridian</span> — purple theme, portfolio header, card identity, 4 sections</li>
+    </ul>
+    <p style="margin-top:24px">No conditional code. No feature flags. Each bank sends an <code style="background:#1E293B;padding:2px 8px;border-radius:4px;font-size:0.85em;color:#7DD3FC">X-Bank-Id</code> header — the server resolves a different manifest and returns different data.</p>
+  </div>
+
+  <!-- 5 -->
+  <div class="slide">
+    <div class="tag">Live Content Management</div>
+    <h2>Change a layout <span class="accent">without touching the app</span>.</h2>
+    <ul>
+      <li>Edit the server manifest — add a slot, rename a label, reorder sections</li>
+      <li>Save the file — no build, no deploy, no store review</li>
+      <li>Pull to refresh in any of the three modes — new layout appears instantly</li>
+      <li>Works identically in Activity, Screen, and Widget mode — same server, same loop</li>
+    </ul>
+  </div>
+
+  <!-- 6 -->
+  <div class="slide">
+    <div class="tag">What This Means for a Bank Client</div>
+    <h2>Your PM can ship a layout change <span class="accent2">on a Tuesday afternoon</span>.</h2>
+    <ul>
+      <li>No SDK release gating the change — edit the manifest, it's live</li>
+      <li>Embed card features anywhere in your app — home screen widget, deep-link target, tab</li>
+      <li>Full brand control — gradient colors, chip, toggle, fonts all configured per bank</li>
+      <li>A/B test layouts across user segments with zero client-side code</li>
+    </ul>
+  </div>
+
+  <!-- 7 -->
+  <div class="slide">
+    <div class="tag">Next Steps</div>
+    <h2>What we need to make this production-ready.</h2>
+    <ul>
+      <li>Manifest Service: Postgres-backed admin API so PMs edit manifests in a portal, not JSON files</li>
+      <li>Portal: drag-and-drop layout editor, preview before publish, versioned rollback</li>
+      <li>iOS scope: SwiftUI renderer — same manifest format, same server, same loop</li>
+      <li>First bank pilot: one real bank, one live manifest, full end-to-end in staging</li>
+    </ul>
+  </div>
+
+</div>
+<div class="counter" id="counter">1 / 7</div>
+<div class="hint">← → to navigate</div>
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const counter = document.getElementById('counter');
+  let cur = 0;
+  function show(n) {
+    slides[cur].classList.remove('active');
+    cur = (n + slides.length) % slides.length;
+    slides[cur].classList.add('active');
+    counter.textContent = (cur + 1) + ' / ' + slides.length;
+  }
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') show(cur + 1);
+    if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   show(cur - 1);
+  });
+</script>
+</body>
+</html>
